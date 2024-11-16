@@ -1,20 +1,20 @@
 import { catchAsyncErrors } from "../middlewares/catchAsyncErrors.js";
 import ErrorHandler from "../middlewares/error.js";
-import { Car } from "../models/carSchema.js"; // Ensure the import matches the updated model name
+import { Car } from "../models/carSchema.js"; 
 import cloudinary from "cloudinary";
 
 export const createTask = catchAsyncErrors(async (req, res, next) => {
-  // Check if files are uploaded
+ 
   if (!req.files || Object.keys(req.files).length === 0) {
     return next(new ErrorHandler("Image files required!", 400));
   }
 
-  // Assuming 'images' is the key for the uploaded files
-  const images = req.files.images; // Adjust this if you are using a different key
+  
+  const images = req.files.images;
   const allowedFormats = ["image/png", "image/jpeg", "image/webp"];
   const uploadedImages = [];
 
-  // Check if the uploaded files are allowed formats
+  
   for (let i = 0; i < images.length; i++) {
     if (!allowedFormats.includes(images[i].mimetype)) {
       return next(
@@ -22,7 +22,7 @@ export const createTask = catchAsyncErrors(async (req, res, next) => {
       );
     }
 
-    // Upload the image to Cloudinary
+   
     let cloudinaryResponse;
     try {
       cloudinaryResponse = await cloudinary.uploader.upload(images[i].tempFilePath);
@@ -36,19 +36,18 @@ export const createTask = catchAsyncErrors(async (req, res, next) => {
     }
   }
 
-  // Destructure the body
+  
   const { title, description, tags } = req.body;
 
-  // Create a new task
   const task = await Car.create({
     title,
     description,
     tags: tags ? tags.split(',') : [],
-    images: uploadedImages, // Store the array of uploaded images
+    images: uploadedImages, 
     createdBy: req.user._id,
   });
 
-  // Send response
+ 
   res.status(201).json({
     success: true,
     message: "Task created successfully!",
@@ -76,9 +75,9 @@ export const updateTask = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Car not found!", 400));
   }
 
-  // Handle image uploads if present in the request
+  
   if (req.files && req.files.images) {
-    const images = req.files.images; // Adjust this if you are using a different key
+    const images = req.files.images; 
     const allowedFormats = ["image/png", "image/jpeg", "image/webp"];
     const uploadedImages = [];
 
@@ -137,5 +136,25 @@ export const getSingleTask = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({
     success: true,
     task,
+  });
+});
+
+
+export const searchCarsByTags = catchAsyncErrors(async (req, res, next) => {
+  const user = req.user._id;
+  const { tags } = req.query; 
+
+
+  const tagsArray = tags ? tags.split(',').map(tag => tag.trim()) : [];
+
+
+  const tasks = await Car.find({
+    createdBy: user,
+    tags: { $in: tagsArray }
+  });
+
+  res.status(200).json({
+    success: true,
+    tasks,
   });
 });

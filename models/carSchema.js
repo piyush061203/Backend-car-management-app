@@ -12,6 +12,7 @@ const carSchema = new mongoose.Schema({
   tags: {
     type: [String], 
     default: [],
+    index: true,
   },
   images: [{
     public_id: {
